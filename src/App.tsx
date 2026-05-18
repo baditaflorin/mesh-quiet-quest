@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
+import { MeshShell } from "@baditaflorin/mesh-common";
 import { QuietQuest, type Mode } from "./features/quiet/QuietQuest";
-import { SettingsDrawer } from "./features/settings/SettingsDrawer";
+import { SettingsExtras } from "./features/settings/SettingsExtras";
 import { appConfig } from "./shared/config";
-import { InviteShareButton, MeshBeacon } from "@baditaflorin/mesh-common";
 
 const STORAGE = {
   room: `${appConfig.storagePrefix}:room`,
@@ -32,7 +32,6 @@ export function App() {
   const [dbThreshold, setDbThreshold] = useState(() =>
     Math.max(-50, Math.min(-30, readNumber(STORAGE.threshold, -40))),
   );
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE.room, roomId);
@@ -48,47 +47,22 @@ export function App() {
   }, [dbThreshold]);
 
   return (
-    <div className="app-root">
+    <MeshShell
+      config={appConfig}
+      roomId={roomId}
+      onRoomChange={setRoomId}
+      settingsExtras={
+        <SettingsExtras
+          durationMin={durationMin}
+          onDurationChange={setDurationMin}
+          mode={mode}
+          onModeChange={setMode}
+          dbThreshold={dbThreshold}
+          onDbThresholdChange={setDbThreshold}
+        />
+      }
+    >
       <QuietQuest roomId={roomId} durationMin={durationMin} mode={mode} dbThreshold={dbThreshold} />
-
-      <InviteShareButton appName={appConfig.appName} roomId={roomId} />
-      <MeshBeacon app={appConfig.appName} room={roomId} />
-
-      <button
-        type="button"
-        className="settings-fab"
-        onClick={() => setSettingsOpen(true)}
-        aria-label="Open settings"
-      >
-        ⚙
-      </button>
-
-      <div className="self-ref">
-        <a href={appConfig.repositoryUrl} target="_blank" rel="noreferrer">
-          source
-        </a>
-        <span aria-hidden="true">·</span>
-        <a href={appConfig.paypalUrl} target="_blank" rel="noreferrer">
-          tip ♥
-        </a>
-        <span aria-hidden="true">·</span>
-        <span>
-          v{appConfig.version} · {appConfig.commit}
-        </span>
-      </div>
-
-      <SettingsDrawer
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        roomId={roomId}
-        onRoomChange={setRoomId}
-        durationMin={durationMin}
-        onDurationChange={setDurationMin}
-        mode={mode}
-        onModeChange={setMode}
-        dbThreshold={dbThreshold}
-        onDbThresholdChange={setDbThreshold}
-      />
-    </div>
+    </MeshShell>
   );
 }
