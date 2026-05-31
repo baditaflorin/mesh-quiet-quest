@@ -216,3 +216,31 @@ body,
   border-radius: 999px;
   cursor: pointer;
 }
+
+.quiet-arm-nomic {
+  margin-top: 0.75rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--fg);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.quiet-log-break {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  background: rgba(255, 94, 122, 0.15);
+  border: 1px solid rgba(255, 94, 122, 0.4);
+  color: var(--fg);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.quiet-penalty {
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}

@@ -31,6 +31,7 @@ type Props = {
 
 export function QuietQuest({ roomId, durationMin, mode, dbThreshold }: Props) {
   const [armed, setArmed] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<SessionState>({
     startedAt: null,
@@ -191,10 +192,38 @@ export function QuietQuest({ roomId, durationMin, mode, dbThreshold }: Props) {
       audioCtxRef.current = ctx;
       streamRef.current = stream;
       analyserRef.current = analyser;
+      setMicEnabled(true);
       setArmed(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
+  };
+
+  // Join without granting the mic — for a facilitator on a laptop (no mic,
+  // or doesn't want to be monitored). They can still start/clear the shared
+  // session and manually log breaks they hear; phones with mics auto-detect.
+  // This path mutates the SAME shared Yjs doc the mic path does, so the
+  // session and score sync to every peer identically.
+  const onJoinNoMic = () => {
+    setError(null);
+    setMicEnabled(false);
+    setArmed(true);
+  };
+
+  // Manually record a speech break into the SAME `breaks` Y.Map the mic-driven
+  // rising-edge increments. Each break subtracts from the room silence score,
+  // and the mutation propagates to every peer over the Yjs doc.
+  const onLogBreak = () => {
+    if (!mesh) return;
+    const startedAtNow = mesh.sessionMap.get("startedAt");
+    if (typeof startedAtNow !== "number") return;
+    const t = mesh.clock.meshNow();
+    const minIdx = Math.floor((t - startedAtNow) / 60_000);
+    if (minIdx < 0 || minIdx >= 1000) return;
+    mesh.room.doc.transact(() => {
+      const cur = mesh.breaks.get(String(minIdx)) ?? 0;
+      mesh.breaks.set(String(minIdx), cur + 1);
+    });
   };
 
   const onStart = () => {
@@ -232,8 +261,14 @@ export function QuietQuest({ roomId, durationMin, mode, dbThreshold }: Props) {
         <button type="button" className="quiet-arm-button" onClick={onArm}>
           Allow mic &amp; connect
         </button>
+        <button type="button" className="quiet-arm-nomic" onClick={onJoinNoMic}>
+          Join without mic (facilitator)
+        </button>
         {error && <p className="quiet-error">Mic error: {error}</p>}
-        <p className="quiet-hint">Calibrate the dB threshold in Settings to your room.</p>
+        <p className="quiet-hint">
+          Calibrate the dB threshold in Settings to your room. No mic? Join as a facilitator — you
+          can run the session and log breaks you hear by hand.
+        </p>
       </div>
     );
   }
@@ -322,16 +357,25 @@ export function QuietQuest({ roomId, durationMin, mode, dbThreshold }: Props) {
         {peerCount + 1} phones · mode {session.mode}
       </div>
       <div className="quiet-active">
-        <div className="quiet-remaining">
+        <div className="quiet-remaining" data-testid="quiet-remaining">
           {mins}:{String(secs).padStart(2, "0")}
         </div>
         <div className="quiet-counts">
           <strong>{quietCount}</strong> of {peerCount + 1} phones quiet right now
         </div>
-        <div className="quiet-score">
+        <div className="quiet-score" data-testid="quiet-score">
           {silenceSec}s of room silence · {silencePct.toFixed(0)}%
         </div>
-        <MicMeter db={dbfs} threshold={dbThreshold} talking={iAmTalking} />
+        <div className="quiet-penalty" data-testid="quiet-penalty">
+          {Math.round(penaltySec)}s penalty from breaks
+        </div>
+        {micEnabled ? (
+          <MicMeter db={dbfs} threshold={dbThreshold} talking={iAmTalking} />
+        ) : (
+          <button type="button" className="quiet-log-break" onClick={onLogBreak}>
+            Log a break (someone spoke)
+          </button>
+        )}
       </div>
       <button type="button" className="quiet-clear" onClick={onClear}>
         Clear session

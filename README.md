@@ -11,6 +11,8 @@
 
 Set a duration. Pick a mode. Allow mic. Tap Begin. Every phone in the room listens to its own mic; while the whole room stays below the speech threshold, the shared score ticks up. Speak above the threshold for half a second and the room loses points.
 
+**No mic, or running the room from a laptop?** "Join without mic (facilitator)" lets you start/clear the shared session and **log a break by hand** when you hear someone speak. The manual break writes the exact same shared `breaks` Y.Map the automatic mic detection does, so the score and every peer's view update identically — mic-driven or hand-logged.
+
 Two modes:
 
 - **Shared** — the room sees an aggregate "5 of 8 phones quiet right now." Never who.
@@ -23,6 +25,7 @@ Two modes:
 - A `Y.Map<minuteIdx, breakCount>("breaks")` tracks aggregate speech events per minute.
 - In shared mode: each peer publishes `{ talking: boolean, ts }` to awareness every 500 ms.
 - A 500 ms continuous-above-threshold debounce gates "speech" — see [ADR 0003](docs/adr/0003-speech-debounce.md).
+- A break (mic rising-edge **or** a facilitator's manual "Log a break") increments `Y.Map("breaks")` and subtracts from the room silence score; the mutation propagates to every peer over the Yjs doc.
 - Threshold is **calibratable** (−50 to −30 dBFS, default −40). Calibrate up if your room has HVAC hum.
 
 ## Privacy threat model
