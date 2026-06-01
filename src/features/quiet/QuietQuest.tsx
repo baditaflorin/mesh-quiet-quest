@@ -22,6 +22,8 @@ type AwarenessClock = {
 const SPEECH_DEBOUNCE_MS = 500;
 const PUBLISH_INTERVAL_MS = 500;
 
+const phones = (n: number) => `${n} ${n === 1 ? "phone" : "phones"}`;
+
 type Props = {
   roomId: string;
   durationMin: number;
@@ -280,7 +282,10 @@ export function QuietQuest({ roomId, durationMin, mode, dbThreshold }: Props) {
   if (startedAt === null) {
     return (
       <div className="quiet-stage">
-        <div className="quiet-hud">{peerCount + 1} phones connected</div>
+        <div className="quiet-hud">
+          {phones(peerCount + 1)} connected
+          {peerCount === 0 && " · waiting for others to join the room"}
+        </div>
         <div className="quiet-pre">
           <h2>Ready</h2>
           <p>
@@ -354,14 +359,14 @@ export function QuietQuest({ roomId, durationMin, mode, dbThreshold }: Props) {
   return (
     <div className="quiet-stage">
       <div className="quiet-hud">
-        {peerCount + 1} phones · mode {session.mode}
+        {phones(peerCount + 1)} · mode {session.mode}
       </div>
       <div className="quiet-active">
         <div className="quiet-remaining" data-testid="quiet-remaining">
           {mins}:{String(secs).padStart(2, "0")}
         </div>
         <div className="quiet-counts">
-          <strong>{quietCount}</strong> of {peerCount + 1} phones quiet right now
+          <strong>{quietCount}</strong> of {phones(peerCount + 1)} quiet right now
         </div>
         <div className="quiet-score" data-testid="quiet-score">
           {silenceSec}s of room silence · {silencePct.toFixed(0)}%
